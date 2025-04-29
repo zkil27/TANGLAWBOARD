@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            /* Changed font-family to a simpler sans-serif stack */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 800px;
+            padding: 2rem;
+            border-radius: 1rem;
+            background-color: #2a2a2a;
+            text-align: center;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.7);
+            border: 1px solid #333;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 2rem;
+            color: #ffdb58;
+            text-shadow: 0 0 10px rgba(255, 219, 0, 0.8);
+        }
+
+        .sounds-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sound-button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            position: relative; /* Crucial for positioning absolute children */
+        }
+
+        .sound-button {
+            /* Adjusted padding to make space for controls at the top */
+            padding: 4rem 1rem 1rem 1rem; /* Top, Right, Bottom, Left */
+            border-radius: 0.75rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: #fff;
+            border: 2px solid #444; /* Initial border */
+            display: flex;
+            flex-direction: column; /* Stack text and icon vertically */
+            align-items: center; /* Center content horizontally */
+            justify-content: center; /* Center content vertically */
+            word-break: break-word;
+            text-align: center; /* Ensure text is centered */
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Subtle initial shadow */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            width: 100%;
+            height: 0; /* Make height based on padding-bottom */
+            padding-bottom: calc(100% - 4rem); /* Adjusted for top padding (4rem) */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+             position: relative; /* Needed for absolute positioning of content inside */
+        }
+
+        .sound-button:hover {
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4); /* Slightly more prominent hover shadow */
+        }
+
+        .sound-button:active {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle active shadow */
+        }
+
+        .sound-button.playing {
+            border: 4px solid #00ff00; /* Green border when playing */
+            box-shadow: 0 0 12px #00ff00; /* Green glow when playing */
+        }
+
+        /* Style for the play/pause icon inside the button (if you were to add one) */
+        .sound-button i {
+            margin-bottom: 0.5rem; /* Add margin below the icon */
+        }
+
+        /* Container for control buttons at the top */
+        .controls-top {
+            position: absolute;
+            top: 0.5rem; /* Position near the top edge */
+            left: 50%; /* Center horizontally */
+            transform: translateX(-50%); /* Adjust for centering */
+            display: flex; /* Arrange buttons in a row */
+            gap: 0.5rem; /* Space between buttons */
+            z-index: 3; /* Ensure controls are above the main button */
+        }
+
+
+        .control-button {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: #fff;
+            border: 2px solid #777; /* Initial border */
+            background-color: #444; /* Initial background */
+            text-align: center;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle initial shadow */
+            width: 2.5rem; /* Fixed width */
+            height: 2.5rem; /* Fixed height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-button:hover {
+             background-color: #555; /* Background change on hover */
+             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3); /* Slightly more prominent hover shadow */
+        }
+
+        .control-button:active {
+             background-color: #333; /* Background change on active */
+             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Subtle active shadow */
+        }
+
+        .loop-button.looping {
+             background-color: #10b981; /* Green background when looping */
+             border-color: #059669; /* Darker green border */
+             box-shadow: 0 0 8px #10b981; /* Green glow when looping */
+        }
+
+        .volume-button {
+             background-color: #444; /* Initial background */
+             border-color: #777; /* Initial border */
+             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle initial shadow */
+        }
+
+
+        .durationDisplay {
+             position: absolute;
+             bottom: 0.75rem;
+             left: 0.75rem;
+             color: #eee;
+             font-size: 0.8rem;
+             z-index: 2;
+        }
+
+
+        .input-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .file-input-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .file-input {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+             z-index: 1; /* Ensure it's clickable */
+        }
+
+        .file-input-label {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #6b7280;
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 2px solid #4b5563;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Subtle initial shadow */
+             z-index: 0; /* Ensure label is behind the invisible input */
+        }
+
+        .file-input-label:hover{
+            background-color: #555;
+            box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2); /* Slightly more prominent hover shadow */
+        }
+
+        .file-input-label:active {
+            background-color: #444;
+            box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1); /* Subtle active shadow */
+        }
+
+        .file-name {
+            margin-left: 0.75rem;
+            color: #eee;
+            font-size: 0.8rem;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .add-sound-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #ffdb58;
+            color: #1a1a1a;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Subtle initial shadow */
+        }
+
+        .add-sound-button:hover {
+            background-color: #f0c239;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3); /* Slightly more prominent hover shadow */
+        }
+
+        .add-sound-button:active {
+            background-color: #e0a800;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle active shadow */
+        }
+
+        .message-box {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #333;
+            color: #eee;
+            font-size: 0.8rem;
+            text-align: center;
+            border: 2px solid #666;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Color classes */
+        .bg-red-500 { background-color: #ef4444; }
+        .hover\:bg-red-700:hover { background-color: #b91c1c; }
+        .bg-green-500 { background-color: #10b981; }
+        .hover\:bg-green-700:hover { background-color: #059669; }
+        .bg-blue-500 { background-color: #3b82f6; }
+        .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+        .bg-yellow-500 { background-color: #f59e0b; }
+        .hover\:bg-yellow-700:hover { background-color: #d97706; }
+        .bg-purple-500 { background-color: #8b5cf6; }
+        .hover\:bg-purple-700:hover { background-color: #5b21b6; }
+        .bg-pink-500 { background-color: #ec4899; }
+        .hover\:bg-pink-700:hover { background-color: #9d174d; }
+        .bg-gray-500 { background-color: #6b7280; }
+        .hover\:bg-gray-700:hover { background-color: #374151; }
+        .bg-orange-500 { background-color: #f97316; }
+        .hover\:bg-orange-700:hover { background-color: #c2410c; }
+        .text-white { color: #fff; }
+        .font-bold { font-weight: bold; }
+
+        /* Styles for larger screens */
+        @media (min-width: 768px) {
+            .container {
+                padding: 3rem;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            .sounds-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 2rem;
+            }
+
+            .sound-button {
+                /* Adjusted padding for larger screens */
+                padding: 5rem 1rem 1rem 1rem; /* Top, Right, Bottom, Left */
+                font-size: 1rem;
+                padding-bottom: calc(100% - 5rem); /* Maintain aspect ratio for larger padding */
+                box-sizing: border-box;
+            }
+
+            .controls-top {
+                 top: 0.75rem; /* Adjust position for larger screens */
+                 gap: 0.75rem; /* Adjust gap for larger screens */
+            }
+
+            .control-button {
+                width: 3rem;
+                height: 3rem;
+                font-size: 1rem;
+            }
+
+
+            .durationDisplay {
+                 bottom: 1rem;
+                 left: 1rem;
+                 font-size: 0.9rem;
+            }
+
+
+            .file-input-label {
+                padding: 0.9rem 1.75rem;
+                font-size: 1rem;
+            }
+
+            .file-name {
+                font-size: 0.9rem;
+                max-width: 300px;
+            }
+
+            .add-sound-button {
+                padding: 0.9rem 1.75rem;
+                font-size: 1rem;
+            }
+
+            .message-box {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container">
+        <h1>Tanglaw Soundboard</h1>
+
+        <div class="sounds-grid" id="sounds-grid">
+            </div>
+
+        <div class="input-area">
+            <div class="file-input-container">
+                <label for="audio-file" class="file-input-label">Choose File</label>
+                <input type="file" id="audio-file" accept="audio/mp3, audio/wav, audio/mpeg" class="file-input">
+                <span id="file-name" class="file-name">No file chosen</span>
+            </div>
+            <button id="add-sound" class="add-sound-button">Add Sound</button>
+        </div>
+
+        <div id="message-box" class="message-box hidden"></div>
+    </div>
+
+    <script>
+        const soundsGrid = document.getElementById('sounds-grid');
+        const audioFileInput = document.getElementById('audio-file');
+        const addSoundButton = document.getElementById('add-sound');
+        const messageBox = document.getElementById('message-box');
+        const fileNameDisplay = document.getElementById('file-name');
+
+        // Initial sound data (adjust paths if needed)
+        const initialSounds = [
+            { name: "Clapping", file: "Clapping.wav", color: "bg-purple-500" }, // Make sure Clapping.wav exists
+            { name: "Airhorn", file: "Airhorn.wav", color: "bg-red-500" },
+            { name: "Yahoo!", file: "Yahoo.mp3", color: "bg-purple-700" },
+            { name: "Chipmunk Laugh", file: "Chipmunk.mp3", color: "bg-green-500" },
+            { name: "Yay! Kids", file: "Yay.mp3", color: "bg-pink-500" },
+            { name: "eatbolaga", file: "Babyhaha.mp3", color: "bg-yellow-500" },
+            { name: "Bongga ka day", file: "Bongga.mp3", color: "bg-brown-500" },
+            { name: "Happy Loop Song", file: "happy.wav", color: "bg-purple-500" },
+                    
+        ];
+
+        let sounds = [...initialSounds];
+
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
+
+        // --- MODIFIED createSoundButton Function ---
+        function createSoundButton(sound) {
+            const container = document.createElement('div');
+            container.className = 'sound-button-container';
+
+            const button = document.createElement('button');
+            button.className = `sound-button ${sound.color} text-white`;
+            button.textContent = sound.name; // Sound name as main button text
+            const audio = new Audio(sound.file);
+            audio.preload = 'auto';
+
+            let isPlaying = false;
+            let isLooping = false;
+            let duration = 0;
+
+            // Create a container for top control buttons
+            const controlsTop = document.createElement('div');
+            controlsTop.className = 'controls-top';
+
+            // Create Play Button (separate control)
+            const playButton = document.createElement('button');
+            playButton.className = 'control-button play-button';
+            playButton.innerHTML = '<i class="fas fa-play"></i>';
+            playButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (!isPlaying) {
+                    audio.currentTime = 0; // Explicitly restart from beginning
+                    audio.play().then(() => {
+                        isPlaying = true;
+                        button.classList.add('playing');
+                        playButton.style.display = 'none';
+                        pauseButton.style.display = 'flex';
+                    }).catch(error => {
+                        console.error("Playback failed (play ctrl):", error);
+                        if (error.name !== 'AbortError') {
+                             showMessage(`Error playing sound: ${sound.name}`, 'error');
+                        }
+                        isPlaying = false;
+                        button.classList.remove('playing');
+                        playButton.style.display = 'flex';
+                        pauseButton.style.display = 'none';
+                        audio.currentTime = 0;
+                        durationDisplay.textContent = formatTime(0);
+                    });
+                }
+            });
+
+            // Create Pause Button (separate control)
+            const pauseButton = document.createElement('button');
+            pauseButton.className = 'control-button pause-button';
+            pauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            pauseButton.style.display = 'none'; // Initially hidden
+            pauseButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (isPlaying) {
+                    audio.pause();
+                    isPlaying = false;
+                    button.classList.remove('playing');
+                    playButton.style.display = 'flex';
+                    pauseButton.style.display = 'none';
+                }
+            });
+
+            // Create Volume Up Button
+            const volumeUpButton = document.createElement('button');
+            volumeUpButton.className = 'control-button volume-button volume-up';
+            volumeUpButton.innerHTML = '<i class="fas fa-plus"></i>';
+            volumeUpButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                audio.volume = Math.min(audio.volume + 0.1, 1.0);
+            });
+
+            // Create Volume Down Button
+            const volumeDownButton = document.createElement('button');
+            volumeDownButton.className = 'control-button volume-button volume-down';
+            volumeDownButton.innerHTML = '<i class="fas fa-minus"></i>';
+            volumeDownButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                audio.volume = Math.max(audio.volume - 0.1, 0.0);
+            });
+
+            // Create Loop Button
+            const loopButton = document.createElement('button');
+            loopButton.className = 'control-button loop-button';
+            loopButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            loopButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                isLooping = !isLooping;
+                audio.loop = isLooping;
+                // Use different icons to indicate state clearly
+                loopButton.innerHTML = isLooping ? '<i class="fas fa-redo"></i>' : '<i class="fas fa-sync-alt"></i>';
+                if (isLooping) {
+                    loopButton.classList.add('looping');
+                } else {
+                    loopButton.classList.remove('looping');
+                }
+            });
+
+            // --- MODIFIED MAIN BUTTON CLICK LISTENER ---
+            // Makes the button "spammable" - always restarts the sound on click.
+            button.addEventListener('click', () => {
+                // 1. Stop any current playback immediately
+                audio.pause();
+
+                // 2. Reset playback position to the start
+                audio.currentTime = 0;
+
+                // 3. Play from the beginning
+                audio.play().then(() => {
+                    // 4. Update state and UI
+                    isPlaying = true;
+                    button.classList.add('playing'); // Visual feedback
+                    playButton.style.display = 'none'; // Hide separate play control
+                    pauseButton.style.display = 'flex'; // Show separate pause control
+                }).catch(error => {
+                    // Handle potential errors (e.g., browser interrupting rapid plays)
+                    console.error("Playback failed (main button spam):", error);
+                    // AbortError is common if clicks are very fast, usually safe to ignore
+                    if (error.name !== 'AbortError') {
+                        showMessage(`Error playing sound: ${sound.name}`, 'error');
+                    }
+                    // Reset state on error
+                    isPlaying = false;
+                    button.classList.remove('playing');
+                    playButton.style.display = 'flex';
+                    pauseButton.style.display = 'none';
+                    audio.currentTime = 0; // Ensure reset on error
+                    durationDisplay.textContent = formatTime(0); // Update display on error
+                });
+            });
+            // --- END OF MODIFIED LISTENER ---
+
+            // Duration display
+            const durationDisplay = document.createElement('div');
+            durationDisplay.className = 'durationDisplay';
+            durationDisplay.textContent = '0:00'; // Initial display
+
+            // Event listeners for the audio element
+            audio.addEventListener('loadedmetadata', () => {
+                duration = audio.duration;
+                // Display initial duration only if it's a valid number
+                if (!isNaN(duration) && isFinite(duration)) {
+                    durationDisplay.textContent = formatTime(duration);
+                } else {
+                     durationDisplay.textContent = '--:--'; // Indicate unknown duration
+                }
+            });
+
+            audio.addEventListener('timeupdate', () => {
+                // Update time display constantly while playing or paused
+                 if (!isNaN(audio.currentTime)) {
+                    durationDisplay.textContent = formatTime(audio.currentTime);
+                 }
+            });
+
+            audio.addEventListener('seeked', () => {
+                 if (!isNaN(audio.currentTime)) {
+                    durationDisplay.textContent = formatTime(audio.currentTime);
+                 }
+            });
+
+             audio.addEventListener('ended', () => {
+                // Only reset UI if the sound ended naturally AND is not looping
+                if (!audio.loop) {
+                    isPlaying = false;
+                    button.classList.remove('playing');
+                    playButton.style.display = 'flex'; // Show play button
+                    pauseButton.style.display = 'none'; // Hide pause button
+                    // Don't reset currentTime here automatically, let next play handle it.
+                    // Resetting time display to 0 makes sense though.
+                    durationDisplay.textContent = formatTime(0);
+                }
+                 // If looping, it will continue playing, state remains isPlaying=true.
+            });
+
+            // Append control buttons to the top container
+            controlsTop.appendChild(playButton);
+            controlsTop.appendChild(pauseButton);
+            controlsTop.appendChild(loopButton);
+            controlsTop.appendChild(volumeUpButton);
+            controlsTop.appendChild(volumeDownButton);
+
+            // Append elements to the main container
+            container.appendChild(controlsTop); // Add the top controls container
+            container.appendChild(button);      // The main clickable button (with text)
+            container.appendChild(durationDisplay); // Duration display at the bottom left
+
+            return container;
+        }
+        // --- END OF MODIFIED createSoundButton Function ---
+
+
+        function addSound(name, file) {
+             const colorClasses = ['bg-red-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-orange-500', 'bg-gray-500'];
+             const randomColor = colorClasses[Math.floor(Math.random() * colorClasses.length)];
+
+            const newSound = { name, file, color: randomColor };
+            sounds.push(newSound);
+            const buttonContainer = createSoundButton(newSound);
+            soundsGrid.appendChild(buttonContainer);
+            showMessage(`Sound "${name}" added successfully!`);
+        }
+
+        addSoundButton.addEventListener('click', () => {
+            const file = audioFileInput.files[0];
+            if (!file) {
+                showMessage('Please select an audio file.', 'error');
+                return;
+            }
+
+            // Allow mp3, wav, and also mpeg (which often covers mp3)
+            if (!file.type.startsWith('audio/mp3') && !file.type.startsWith('audio/wav') && file.type !== 'audio/mpeg') {
+                 showMessage('Invalid file type. Please upload an MP3 or WAV file.', 'error');
+                 return;
+            }
+
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const audioDataUrl = event.target.result;
+                // Use file name without extension as the sound name
+                const soundName = file.name.replace(/\.[^/.]+$/, "");
+                addSound(soundName, audioDataUrl);
+                // Reset file input
+                audioFileInput.value = '';
+                fileNameDisplay.textContent = 'No file chosen';
+            };
+             reader.onerror = (error) => {
+                 console.error("Error reading file:", error);
+                 showMessage("Error reading selected file.", 'error');
+             };
+            reader.readAsDataURL(file); // Read file as Base64 Data URL
+        });
+
+        audioFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name; // Show selected file name
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+            }
+        });
+
+        // Initialize the soundboard with initial sounds
+        sounds.forEach(sound => {
+            const buttonContainer = createSoundButton(sound);
+            soundsGrid.appendChild(buttonContainer);
+        });
+    </script>
+</body>
+</html>
